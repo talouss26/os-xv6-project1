@@ -114,6 +114,10 @@ allocproc(void)
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
+
+      //Đảm bảo mặc định trạng thái đầu tiên sẽ không trace syscall nào
+      p->trace_mask = 0;
+
       goto found;
     } else {
       release(&p->lock);
@@ -283,10 +287,15 @@ fork(void)
   struct proc *np;
   struct proc *p = myproc();
 
+  
+
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
+  
+  //Thêm dòng gán giá trị để process con cập nhật lại tiến trình tránh trace lỗi
+  np->trace_mask = p->trace_mask;
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){

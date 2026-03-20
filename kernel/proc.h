@@ -104,4 +104,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  //Thêm biến tracemask để lưu giá trị mask mà tiến trình gọi
+  int trace_mask;
 };

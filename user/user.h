@@ -23,6 +23,10 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+//Thêm prototype
+int trace(int);
+int procinfo(int, struct procinfo *);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
