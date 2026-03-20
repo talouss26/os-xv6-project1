@@ -110,30 +110,27 @@ uint64
 sys_procinfo(void)
 {
   int pid;
-  uint64 addr; // Địa chỉ con trỏ struct procinfo mà user truyền vào
+  uint64 addr;
   struct proc *p;
   struct procinfo temp_info;
-  extern struct proc proc[NPROC]; // Tham chiếu đến bảng tiến trình của hệ thống
+  extern struct proc proc[NPROC];
 
-  // 1. Lấy 2 tham số từ User
-  argint(0, &pid);
-  argaddr(1, &addr);
+  // 1. Lấy 2 tham số từ người dùng [cite: 170, 171, 172]
+  argint(0, &pid);   // Tham số 1: pid
+  argaddr(1, &addr); // Tham số 2: địa chỉ struct
 
-  // 2. Duyệt bảng proc[] để tìm tiến trình có PID khớp
+  // 2. Tìm tiến trình có PID tương ứng trong bảng proc[]
   int found = 0;
   for(p = proc; p < &proc[NPROC]; p++){
-    acquire(&p->lock); // Khóa tiến trình để đảm bảo an toàn dữ liệu
+    acquire(&p->lock);
     if(p->pid == pid){
-      // 3. Thu thập thông tin vào biến tạm temp_info
+      // 3. Copy dữ liệu từ struct proc sang struct procinfo [cite: 169, 174]
       temp_info.pid = p->pid;
-      temp_info.ppid = p->parent ? p->parent->pid : 0;
-      temp_info.sz = p->sz;
+      temp_info.ppid = p->parent ? p->parent->pid : 0; // Lấy PID của cha 
+      temp_info.state = p->state; // Trạng thái tiến trình 
+      temp_info.sz = p->sz;       // Kích thước bộ nhớ 
       safestrcpy(temp_info.name, p->name, sizeof(p->name));
-
-      // Chuyển trạng thái từ enum sang chuỗi (ví dụ: RUNNING)
-      // Bạn có thể tham khảo mảng procstate[] trong kernel/proc.c
-      // tạm thời giả định: safestrcpy(temp_info.state, "UNKNOWN", 16);
-
+      
       found = 1;
       release(&p->lock);
       break;
@@ -141,9 +138,9 @@ sys_procinfo(void)
     release(&p->lock);
   }
 
-  if(!found) return -1;
+  if(!found) return -1; // Không tìm thấy PID yêu cầu
 
-  // 4. COPY dữ liệu từ Kernel Space về User Space
+  // 4. Copy kết quả về User Space [cite: 172]
   if(copyout(myproc()->pagetable, addr, (char *)&temp_info, sizeof(temp_info)) < 0)
     return -1;
 

@@ -90,4 +90,3 @@ kalloc(void)
 #endif
   return (void*)r;
 }
-

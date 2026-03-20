@@ -12,7 +12,7 @@ typedef uint64 pde_t;
 struct procinfo {
     int pid; //Process id
     int ppid; // Parent process id
-    char state[16]; //Trạng thái (RUNNING, SLEEPING,...)
+    int state; //Trạng thái (see kernel/proc.h)
     uint64 sz; //Kích thước bộ nhớ (bytes)
     char name[16]; //Tên tiến trình
 };
