@@ -107,4 +107,10 @@ struct proc {
 
   //Thêm biến tracemask để lưu giá trị mask mà tiến trình gọi
   int trace_mask;
+
+  
 };
+
+//khai báo prototype
+uint64 procinfo(int pid, uint64 addr);
+ 

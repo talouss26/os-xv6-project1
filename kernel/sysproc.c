@@ -5,6 +5,9 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "procinfo.h"
+
+extern struct proc proc[NPROC];
 
 uint64
 sys_exit(void)
@@ -104,7 +107,8 @@ sys_trace(void)
   //Lưu mask này vào thông tin của tiến trình hiện tại
   myproc()->trace_mask = mask;
   return 0;
-}
+} 
+
 
 uint64
 sys_procinfo(void)
@@ -112,37 +116,31 @@ sys_procinfo(void)
   int pid;
   uint64 addr;
   struct proc *p;
-  struct procinfo temp_info;
-  extern struct proc proc[NPROC];
+  struct procinfo info;
 
-  // 1. Lấy 2 tham số từ người dùng [cite: 170, 171, 172]
-  argint(0, &pid);   // Tham số 1: pid
-  argaddr(1, &addr); // Tham số 2: địa chỉ struct
+  argint(0, &pid);
+  argaddr(1, &addr);
 
-  // 2. Tìm tiến trình có PID tương ứng trong bảng proc[]
-  int found = 0;
   for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
+
     if(p->pid == pid){
-      // 3. Copy dữ liệu từ struct proc sang struct procinfo [cite: 169, 174]
-      temp_info.pid = p->pid;
-      temp_info.ppid = p->parent ? p->parent->pid : 0; // Lấy PID của cha 
-      temp_info.state = p->state; // Trạng thái tiến trình 
-      temp_info.sz = p->sz;       // Kích thước bộ nhớ 
-      safestrcpy(temp_info.name, p->name, sizeof(p->name));
-      
-      found = 1;
+      info.pid = p->pid;
+      info.ppid = p->parent ? p->parent->pid : 0;
+      info.state = p->state;
+      info.sz = p->sz;
+      safestrcpy(info.name, p->name, sizeof(info.name));
+
       release(&p->lock);
-      break;
+
+      if(copyout(myproc()->pagetable, addr, (char *)&info, sizeof(info)) < 0)
+        return -1;
+
+      return 0;
     }
+
     release(&p->lock);
   }
 
-  if(!found) return -1; // Không tìm thấy PID yêu cầu
-
-  // 4. Copy kết quả về User Space [cite: 172]
-  if(copyout(myproc()->pagetable, addr, (char *)&temp_info, sizeof(temp_info)) < 0)
-    return -1;
-
-  return 0;
+  return -1;
 }

@@ -1,3 +1,5 @@
+#include "kernel/procinfo.h"
+
 struct stat;
 
 // system calls
@@ -23,9 +25,12 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+
 //Thêm prototype
-int trace(int);
-int procinfo(int, struct procinfo *);
+int trace(int); 
+struct procinfo; // Khai báo trước
+int procinfo(int, struct procinfo*); 
+
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -45,3 +50,5 @@ void *memcpy(void *, const void *, uint);
 // umalloc.c
 void* malloc(uint);
 void free(void*);
+
+ 
