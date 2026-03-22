@@ -8,18 +8,19 @@ main(int argc, char *argv[])
 {
   struct procinfo info;
 
-  int pid = getpid();
+  int pid;
 
-  if(procinfo(pid, &info) < 0){
-    printf("procinfo failed\n");
-    exit(1);
+  if (argc < 2) pid = getpid();
+  else pid = atoi(argv[1]);
+
+  if (procinfo(pid, &info) == 0) {
+    printf("Process: %s\n", info.name);
+    printf("PID: %d, PPID: %d\n", info.pid, info.ppid); 
+    printf("State: %d\n", info.state);
+    printf("Memory: %ld bytes\n", info.sz);
+  } else {
+    printf("procinfo failed for PID %d\n", pid);
   }
-
-  printf("pid: %d\n", info.pid);
-  printf("ppid: %d\n", info.ppid);
-  printf("state: %d\n", info.state);
-  printf("size: %ld\n", info.sz);
-  printf("name: %s\n", info.name);
-
+  
   exit(0);
 }
