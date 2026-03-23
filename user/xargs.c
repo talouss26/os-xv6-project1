@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
     int xargs_argc = 0;
 
     // 1. Copy câu lệnh gốc và các tham số ban đầu của nó
-    // Ví dụ: xargs echo bye -> xargs_argv[0] = "echo", xargs_argv[1] = "bye"
     for (int i = 1; i < argc; i++) {
         xargs_argv[xargs_argc++] = argv[i];
     }
