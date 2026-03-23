@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "procinfo.h"
 
 struct cpu cpus[NCPU];
 
@@ -114,6 +115,10 @@ allocproc(void)
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
+
+      //Đảm bảo mặc định trạng thái đầu tiên sẽ không trace syscall nào
+      p->trace_mask = 0;
+
       goto found;
     } else {
       release(&p->lock);
@@ -283,10 +288,15 @@ fork(void)
   struct proc *np;
   struct proc *p = myproc();
 
+  
+
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
+  
+  //Thêm dòng gán giá trị để process con cập nhật lại tiến trình tránh trace lỗi
+  np->trace_mask = p->trace_mask;
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
@@ -692,4 +702,38 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64
+procinfo(int pid, uint64 addr)
+{
+    struct proc *p;
+    struct procinfo info;
+    struct proc *cur = myproc();
+
+    // duyệt toàn bộ process
+    for(p = proc; p < &proc[NPROC]; p++){
+        acquire(&p->lock);
+
+        if(p->pid == pid){
+            info.pid = p->pid;
+            info.ppid = p->parent ? p->parent->pid : 0;
+            info.state = p->state;
+            info.sz = p->sz;
+
+            safestrcpy(info.name, p->name, sizeof(info.name));
+
+            release(&p->lock);
+
+            // copy về user
+            if(copyout(cur->pagetable, addr, (char*)&info, sizeof(info)))
+                return -1;
+
+            return 0;
+        }
+
+        release(&p->lock);
+    }
+
+    return -1; // không tìm thấy
 }

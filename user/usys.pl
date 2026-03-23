@@ -36,3 +36,7 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
+
+#Thêm stub
+entry("trace");
+entry("procinfo");

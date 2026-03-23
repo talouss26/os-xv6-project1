@@ -5,6 +5,9 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "procinfo.h"
+
+extern struct proc proc[NPROC];
 
 uint64
 sys_exit(void)
@@ -90,4 +93,54 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+//Viết hàm uint64 sys_trace(void) để lấy đối số từ người dùng bằng cách sử dụng argint và gán vào biến mask của tiến trình hiện tại(myproc()->trace_mask)
+uint64 
+sys_trace(void) 
+{
+  int mask;
+
+  //Sử dụng argint để lấy tham số đầu tiên người dùng truyền vào
+  argint(0, &mask);
+
+  //Lưu mask này vào thông tin của tiến trình hiện tại
+  myproc()->trace_mask = mask;
+  return 0;
+} 
+
+
+uint64
+sys_procinfo(void)
+{
+  int pid;
+  uint64 addr;
+  struct proc *p;
+  struct procinfo info;
+
+  argint(0, &pid);
+  argaddr(1, &addr);
+
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+
+    if(p->pid == pid){
+      info.pid = p->pid;
+      info.ppid = p->parent ? p->parent->pid : 0;
+      info.state = p->state;
+      info.sz = p->sz;
+      safestrcpy(info.name, p->name, sizeof(info.name));
+
+      release(&p->lock);
+
+      if(copyout(myproc()->pagetable, addr, (char *)&info, sizeof(info)) < 0)
+        return -1;
+
+      return 0;
+    }
+
+    release(&p->lock);
+  }
+
+  return -1;
 }
